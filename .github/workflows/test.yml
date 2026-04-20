@@ -1,0 +1,41 @@
+name: brew test-bot
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brew-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-bot:
+    name: brew test-bot
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      # `brew test-bot` runs `brew style`, `brew audit` and a full
+      # build-from-source + `brew test` cycle on every formula changed by
+      # the PR (or the whole tap, on push to main).
+      - name: brew test-bot --only-setup
+        run: brew test-bot --only-setup
+
+      - name: brew test-bot --only-tap-syntax
+        run: brew test-bot --only-tap-syntax
+
+      - name: brew test-bot (build from source + test)
+        if: github.event_name == 'pull_request'
+        run: brew test-bot --only-formulae --root-url="https://github.com/${{ github.repository }}/releases/download/bottles"
