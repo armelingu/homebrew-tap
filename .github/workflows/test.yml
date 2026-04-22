@@ -14,6 +14,10 @@ concurrency:
   group: brew-${{ github.ref }}
   cancel-in-progress: true
 
+# The common pattern is to check the tap out *directly inside*
+# Homebrew's tap cache so `brew` treats it like a normal installed
+# tap. That lets us use `--tap=armelingu/tap` instead of fighting
+# with path-based invocations.
 jobs:
   lint-and-audit:
     name: Style + audit
@@ -23,27 +27,25 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Checkout tap
+      - name: Checkout tap into Homebrew's tap cache
         uses: actions/checkout@v4
+        with:
+          path: ${{ runner.temp }}/homebrew-tap-checkout
 
-      - name: brew style (per formula)
+      - name: Link checkout into Homebrew taps directory
         run: |
-          for f in Formula/*.rb; do
-            echo "::group::brew style $f"
-            brew style --display-cop-names "$f"
-            echo "::endgroup::"
-          done
+          taps_root="$(brew --repository)/Library/Taps/armelingu"
+          mkdir -p "$taps_root"
+          ln -sf "${{ runner.temp }}/homebrew-tap-checkout" "$taps_root/homebrew-tap"
+          brew tap | grep armelingu/tap
 
-      - name: brew audit --new-formula --online
-        run: |
-          for f in Formula/*.rb; do
-            echo "::group::brew audit $f"
-            # --new-formula: full strict rule set appropriate for a brand-new
-            #               formula in a third-party tap.
-            # --online:      follow URLs and verify SHA256 matches live files.
-            brew audit --new-formula --online "$f"
-            echo "::endgroup::"
-          done
+      - name: brew style
+        run: brew style --display-cop-names armelingu/tap
+
+      - name: brew audit (new + online)
+        # --new implies --strict --online and enables the full set of
+        # "is this formula ready to be accepted upstream?" rules.
+        run: brew audit --new --online --tap=armelingu/tap
 
   install-and-test:
     name: Build from source + brew test
@@ -56,15 +58,23 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Checkout tap
+      - name: Checkout tap into Homebrew's tap cache
         uses: actions/checkout@v4
+        with:
+          path: ${{ runner.temp }}/homebrew-tap-checkout
 
-      - name: Install each formula from source and run its test block
+      - name: Link checkout into Homebrew taps directory
         run: |
-          for f in Formula/*.rb; do
+          taps_root="$(brew --repository)/Library/Taps/armelingu"
+          mkdir -p "$taps_root"
+          ln -sf "${{ runner.temp }}/homebrew-tap-checkout" "$taps_root/homebrew-tap"
+
+      - name: Install each tap formula from source and run its test block
+        run: |
+          for f in "${{ runner.temp }}/homebrew-tap-checkout"/Formula/*.rb; do
             name="$(basename "$f" .rb)"
-            echo "::group::brew install --build-from-source $name"
-            brew install --build-from-source --verbose "./$f"
+            echo "::group::brew install --build-from-source armelingu/tap/$name"
+            brew install --build-from-source --verbose "armelingu/tap/$name"
             echo "::endgroup::"
 
             echo "::group::brew test $name"
