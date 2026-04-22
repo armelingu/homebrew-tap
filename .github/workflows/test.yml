@@ -14,10 +14,8 @@ concurrency:
   group: brew-${{ github.ref }}
   cancel-in-progress: true
 
-# The common pattern is to check the tap out *directly inside*
-# Homebrew's tap cache so `brew` treats it like a normal installed
-# tap. That lets us use `--tap=armelingu/tap` instead of fighting
-# with path-based invocations.
+# The tap is symlinked into Homebrew's tap cache so `brew` commands can
+# resolve `armelingu/tap` normally.
 jobs:
   lint-and-audit:
     name: Style + audit
@@ -27,17 +25,18 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Checkout tap into Homebrew's tap cache
+      - name: Checkout tap
         uses: actions/checkout@v4
         with:
-          path: ${{ runner.temp }}/homebrew-tap-checkout
+          path: homebrew-tap
 
-      - name: Link checkout into Homebrew taps directory
+      - name: Register checkout as the armelingu/tap Homebrew tap
         run: |
           taps_root="$(brew --repository)/Library/Taps/armelingu"
           mkdir -p "$taps_root"
-          ln -sf "${{ runner.temp }}/homebrew-tap-checkout" "$taps_root/homebrew-tap"
-          brew tap | grep armelingu/tap
+          ln -sf "$GITHUB_WORKSPACE/homebrew-tap" "$taps_root/homebrew-tap"
+          brew tap
+          ls -la "$taps_root/homebrew-tap/Formula"
 
       - name: brew style
         run: brew style --display-cop-names armelingu/tap
@@ -58,20 +57,20 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
-      - name: Checkout tap into Homebrew's tap cache
+      - name: Checkout tap
         uses: actions/checkout@v4
         with:
-          path: ${{ runner.temp }}/homebrew-tap-checkout
+          path: homebrew-tap
 
-      - name: Link checkout into Homebrew taps directory
+      - name: Register checkout as the armelingu/tap Homebrew tap
         run: |
           taps_root="$(brew --repository)/Library/Taps/armelingu"
           mkdir -p "$taps_root"
-          ln -sf "${{ runner.temp }}/homebrew-tap-checkout" "$taps_root/homebrew-tap"
+          ln -sf "$GITHUB_WORKSPACE/homebrew-tap" "$taps_root/homebrew-tap"
 
       - name: Install each tap formula from source and run its test block
         run: |
-          for f in "${{ runner.temp }}/homebrew-tap-checkout"/Formula/*.rb; do
+          for f in "$GITHUB_WORKSPACE/homebrew-tap"/Formula/*.rb; do
             name="$(basename "$f" .rb)"
             echo "::group::brew install --build-from-source armelingu/tap/$name"
             brew install --build-from-source --verbose "armelingu/tap/$name"
