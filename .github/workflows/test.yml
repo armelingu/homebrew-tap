@@ -25,18 +25,25 @@ jobs:
 
       - name: Checkout tap
         uses: actions/checkout@v4
-        with:
-          path: homebrew-tap
 
-      - name: Tap the local checkout
+      - name: brew style (per formula)
         run: |
-          brew tap armelingu/tap "$PWD/homebrew-tap"
+          for f in Formula/*.rb; do
+            echo "::group::brew style $f"
+            brew style --display-cop-names "$f"
+            echo "::endgroup::"
+          done
 
-      - name: brew style
-        run: brew style --display-cop-names armelingu/tap
-
-      - name: brew audit (online, new-formula rules relaxed)
-        run: brew audit --tap=armelingu/tap --online --git
+      - name: brew audit --new-formula --online
+        run: |
+          for f in Formula/*.rb; do
+            echo "::group::brew audit $f"
+            # --new-formula: full strict rule set appropriate for a brand-new
+            #               formula in a third-party tap.
+            # --online:      follow URLs and verify SHA256 matches live files.
+            brew audit --new-formula --online "$f"
+            echo "::endgroup::"
+          done
 
   install-and-test:
     name: Build from source + brew test
@@ -51,19 +58,18 @@ jobs:
 
       - name: Checkout tap
         uses: actions/checkout@v4
-        with:
-          path: homebrew-tap
 
-      - name: Tap the local checkout
+      - name: Install each formula from source and run its test block
         run: |
-          brew tap armelingu/tap "$PWD/homebrew-tap"
+          for f in Formula/*.rb; do
+            name="$(basename "$f" .rb)"
+            echo "::group::brew install --build-from-source $name"
+            brew install --build-from-source --verbose "./$f"
+            echo "::endgroup::"
 
-      - name: brew install --build-from-source --verbose mac-manager
-        run: brew install --build-from-source --verbose armelingu/tap/mac-manager
+            echo "::group::brew test $name"
+            brew test --verbose "$name"
+            echo "::endgroup::"
 
-      - name: brew test mac-manager
-        run: brew test --verbose armelingu/tap/mac-manager
-
-      - name: brew uninstall mac-manager
-        if: always()
-        run: brew uninstall --force mac-manager
+            brew uninstall --force "$name" || true
+          done
