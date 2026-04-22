@@ -34,7 +34,11 @@ jobs:
         run: |
           taps_root="$(brew --repository)/Library/Taps/armelingu"
           mkdir -p "$taps_root"
-          ln -sf "$GITHUB_WORKSPACE/homebrew-tap" "$taps_root/homebrew-tap"
+          # `setup-homebrew` may have pre-created an empty directory
+          # when it saw the tap name referenced. Wipe it so the
+          # symlink can take its place.
+          rm -rf "$taps_root/homebrew-tap"
+          ln -s "$GITHUB_WORKSPACE/homebrew-tap" "$taps_root/homebrew-tap"
           brew tap
           ls -la "$taps_root/homebrew-tap/Formula"
 
@@ -66,7 +70,8 @@ jobs:
         run: |
           taps_root="$(brew --repository)/Library/Taps/armelingu"
           mkdir -p "$taps_root"
-          ln -sf "$GITHUB_WORKSPACE/homebrew-tap" "$taps_root/homebrew-tap"
+          rm -rf "$taps_root/homebrew-tap"
+          ln -s "$GITHUB_WORKSPACE/homebrew-tap" "$taps_root/homebrew-tap"
 
       - name: Install each tap formula from source and run its test block
         run: |
