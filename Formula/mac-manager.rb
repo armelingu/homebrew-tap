@@ -3,8 +3,8 @@ class MacManager < Formula
 
   desc "Monitor your Mac's health, security and hardware from the terminal"
   homepage "https://github.com/armelingu/mac-manager"
-  url "https://files.pythonhosted.org/packages/73/c4/0a1b3a6ad294f5c41850e1cf68d06fa62f577b8f9200e07260dd55a17639/mac_manager-0.1.1.tar.gz"
-  sha256 "975da708c2a6a510c85030bb1db0f1d4815129f34f00c93fa77edf15ddf0fd74"
+  url "https://files.pythonhosted.org/packages/de/d8/91c839fa27788dd30eadcd5309cf956fb2668d3cb89568a68b0f865c4b92/mac_manager-0.1.2.tar.gz"
+  sha256 "e9b45ce4ff599d931b9f689b2e543226e92f8101840ac20139f94d4687a08b33"
   license "Apache-2.0"
   head "https://github.com/armelingu/mac-manager.git", branch: "main"
 
