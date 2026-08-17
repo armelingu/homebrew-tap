@@ -3,8 +3,8 @@ class MacManager < Formula
 
   desc "Monitor your Mac's health, security and hardware from the terminal"
   homepage "https://github.com/armelingu/mac-manager"
-  url "https://files.pythonhosted.org/packages/de/d8/91c839fa27788dd30eadcd5309cf956fb2668d3cb89568a68b0f865c4b92/mac_manager-0.1.2.tar.gz"
-  sha256 "e9b45ce4ff599d931b9f689b2e543226e92f8101840ac20139f94d4687a08b33"
+  url "https://files.pythonhosted.org/packages/f7/7d/7b8b81753e5e47618eecb48fe9c681def916d163161734b3b6e9df406a82/mac_manager-0.2.0.tar.gz"
+  sha256 "ba822e0bc29d32a1610fd156d37e28d0f9bb893cc20a44dcc58c0f29a6070961"
   license "Apache-2.0"
   head "https://github.com/armelingu/mac-manager.git", branch: "main"
 
@@ -52,7 +52,7 @@ class MacManager < Formula
     # macOS binaries when invoked without args, so we stick to `--help`
     # in the test sandbox.
     help = shell_output("#{bin}/mm --help")
-    %w[battery health disk clean net doctor watch alerts status security dev].each do |cmd|
+    %w[battery health disk clean net doctor watch alerts status security dev setup uninstall].each do |cmd|
       assert_match cmd, help
     end
   end
